@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnamnesisFormType } from 'src/types';
-import useFetchAnamnesis from 'src/hooks/useFetchAnamnesis';
 import Modal from 'src/components/UI/Modal';
 
 interface TableActionsProps {
   original: AnamnesisFormType;
+  deleteItem?: (id: number) => Promise<void>;
 }
 
-const TableActions = ({ original }: TableActionsProps) => {
+const TableActions = ({ original, deleteItem }: TableActionsProps) => {
   const navigate = useNavigate();
-  
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
-  const { deleteItem } = useFetchAnamnesis('');
 
   const handleDelete = async () => {
     if (deleteItem) {
@@ -22,9 +19,8 @@ const TableActions = ({ original }: TableActionsProps) => {
       } catch (error) {
         console.error('Failed to delete item:', error);
       }
-    } else {
-      console.warn('deleteItem function is not available');
-    }
+    } 
+    
     setShowConfirmModal(false);
   };
 

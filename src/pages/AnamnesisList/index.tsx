@@ -20,7 +20,7 @@ const AnamnesisList = () => {
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState<SortingRule<AnamnesisFormType>[]>([]);
 
-  const { data, isLoading } = useFetchAnamnesis(searchTerm);
+  const { data, isLoading, deleteItem } = useFetchAnamnesis(searchTerm);
 
   const columns: Column<AnamnesisFormType>[] = useMemo(() => [
     { Header: 'Title', accessor: 'title' },
@@ -34,9 +34,9 @@ const AnamnesisList = () => {
       Header: 'Actions',
       accessor: 'actions',
       disableSortBy: true,
-      Cell: ({ row }: { row: { original: AnamnesisFormType } }) => <TableActions original={row.original} />
+      Cell: ({ row }: { row: { original: AnamnesisFormType } }) => <TableActions original={row.original} deleteItem={deleteItem} />
     }
-  ], []);
+  ], [deleteItem]);
 
   const {
     getTableProps,
