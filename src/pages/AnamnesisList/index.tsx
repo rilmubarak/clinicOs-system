@@ -1,26 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Column, SortingRule } from 'react-table';
+import { Column } from 'react-table';
 import { AnamnesisFormType } from 'src/types';
-import TableActions from 'src/components/AnamnesisTable/TableActions';
-import PaginationControls from 'src/components/AnamnesisTable/PaginationControls';
-import SearchInput from 'src/components/UI/SearchInput';
 import Loading from 'src/icons/Loading';
 import SortAscIcon from 'src/icons/SortAscIcon';
 import SortDescIcon from 'src/icons/SortDescIcon';
-import useFetchAnamnesis from 'src/hooks/useFetchAnamnesis';
+import SearchInput from 'src/components/UI/SearchInput';
+import TableActions from 'src/components/AnamnesisTable/TableActions';
+import PaginationControls from 'src/components/AnamnesisTable/PaginationControls';
 import useTablePagination from 'src/hooks/useTablePagination';
+import useAnamnesisList from 'src/hooks/useAnamnesisList';
 import { formatDate } from 'src/utils/formatDate';
 
 const AnamnesisList = () => {
   const navigate = useNavigate();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<SortingRule<AnamnesisFormType>[]>([]);
-
-  const { data, isLoading, deleteItem } = useFetchAnamnesis(searchTerm);
+  const { data, isLoading, deleteItem, searchTerm, setSearchTerm } = useAnamnesisList();
 
   const columns: Column<AnamnesisFormType>[] = useMemo(() => [
     { Header: 'Title', accessor: 'title' },
@@ -51,16 +46,12 @@ const AnamnesisList = () => {
     tableNextPage,
     tablePreviousPage,
     handlePageSizeChange,
-    handleHeaderClick
-  } = useTablePagination(
-    columns,
-    data,
+    handleHeaderClick,
     pageIndex,
     pageSize,
-    sortBy,
-    setSortBy,
-    setPageIndex,
-    setPageSize
+  } = useTablePagination(
+    columns,
+    data
   );
 
   return (

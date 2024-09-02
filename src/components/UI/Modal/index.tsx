@@ -26,8 +26,6 @@ const ModalContent = ({ type, message, onClose, onConfirm }: ContentProps & { ty
     confirm: 'blue',
   };
 
-  console.log('object :>> ', `bg-${colors[type]}-500`);
-
   const actions = type === 'confirm' ? (
     <>
       <button

@@ -1,167 +1,32 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import useAnamnesisForm from 'src/hooks/useAnamnesisForm';
 import SortableItem from 'src/components/UI/SortableItem';
-import { AnamnesisFormType } from 'src/types';
-import Modal from 'src/components/UI/Modal';
 import Loading from 'src/components/UI/Loading';
-
-const initialAnamnesis: AnamnesisFormType = {
-  id: 0,
-  title: '',
-  description: '',
-  createdAt: '',
-  sections: [],
-};
-
-const initialModal = {
-  type: '', 
-  isActive: false
-}
+import Modal from 'src/components/UI/Modal';
 
 const AnamnesisDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const {
+    selectedAnamnesis,
+    isLoading,
+    error,
+    showModal,
+    sectionToDelete,
+    DnDsensors,
+    handleDeleteSectionDetail,
+    handleDragEndDetail,
+    handleCancelDelete,
+    handleOnCloseModal,
+    handleDeleteClick,
+  } = useAnamnesisForm();
 
-  const [selectedAnamnesis, setSelectedAnamnesis] = useState<AnamnesisFormType>(initialAnamnesis);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(initialModal);
-  const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  useEffect(() => {
-    const fetchFormData = async () => {
-      try {
-        const response = await fetch(`http://localhost:5001/anamnesis/${id}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch data.');
-        }
-
-        const data = await response.json();
-        setSelectedAnamnesis(data);
-      } catch (error) {
-        setError((error as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFormData();
-  }, [id]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = selectedAnamnesis.sections.findIndex(section => section.id === active.id);
-      const newIndex = selectedAnamnesis.sections.findIndex(section => section.id === over.id);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        setSelectedAnamnesis(prevState => {
-          const updatedSections = arrayMove(prevState.sections, oldIndex, newIndex);
-          
-          // To update the local state, push changes to the server
-          updateSectionsOnServer({ ...prevState, sections: updatedSections });
-          return { ...prevState, sections: updatedSections };
-        });
-      }
-    }
-  };
-
-  const updateSectionsOnServer = async (updatedData: AnamnesisFormType) => {
-    try {
-      const response = await fetch(`http://localhost:5001/anamnesis/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update the form data.');
-      }
-
-      setShowModal({ type: 'success', isActive: true});
-      console.log('Form data updated successfully!');
-    } catch (error) {
-      setError('Failed to update form data. ' + error);
-      console.error('Error updating form data:', error);
-    }
-  };
-  
-  const handleDeleteSection = async () => {
-    if (!sectionToDelete) return;
-
-    try {
-      const response = await fetch(`http://localhost:5001/anamnesis/${selectedAnamnesis.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sections: selectedAnamnesis.sections.filter(section => section.id !== sectionToDelete),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete the section.');
-      }
-
-      setSelectedAnamnesis(prevState => ({
-        ...prevState,
-        sections: prevState.sections.filter(section => section.id !== sectionToDelete),
-      }));
-    } catch (error) {
-      console.log('error :>> ', error);
-      setError('Failed to delete the section.');
-    } finally {
-      handleOnCloseModal()
-      setSectionToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    handleOnCloseModal()
-    setSectionToDelete(null);
-  };
-
-  const handleDeleteClick = (sectionId: string) => {
-    setSectionToDelete(sectionId);
-    setShowModal({ type: 'confirm', isActive: true});
-  };
-
-  const handleOnCloseModal = () => {
-    setShowModal({ type: '', isActive: false});
-    setError(null)
-  }
-  
-  if (loading) return <Loading />;
-  if (error) return <Modal type='error' message={error as string} onClose={handleOnCloseModal}/>;
-  if (!selectedAnamnesis) return <p className="text-center text-gray-600">Form not found</p>;
+  if (isLoading) return <Loading />;
+  if (error) return <Modal type='error' message={error} onClose={handleOnCloseModal}/>;
+  if (!selectedAnamnesis) return <p className="text-center text-gray-600">Anamnesis not found</p>;
 
   return (
     <>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={DnDsensors} collisionDetection={closestCenter} onDragEnd={handleDragEndDetail}>
         <SortableContext items={selectedAnamnesis.sections.map(section => section.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-4 p-4">
             <div className="text-center">
@@ -210,7 +75,7 @@ const AnamnesisDetail = () => {
           type="confirm"
           message="Are you sure you want to delete this section?"
           onClose={handleCancelDelete}
-          onConfirm={handleDeleteSection}
+          onConfirm={handleDeleteSectionDetail}
         />
       )}
 

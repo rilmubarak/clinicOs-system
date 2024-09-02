@@ -5,31 +5,33 @@ import useDebounce from 'src/hooks/useDebounce';
 interface UseAnamnesisResult {
   data: AnamnesisFormType[];
   isLoading: boolean;
-  error?: Error | string;
-  deleteItem?: (id: number) => Promise<void>;
+  error?: string | null;
+  searchTerm: string, 
+  setSearchTerm: (val: string) => void;
+  deleteItem?: (val: number) => Promise<void>;
 }
 
 const API_URL = 'http://localhost:5001/anamnesis';
 
-const useFetchAnamnesis = (searchTerm: string): UseAnamnesisResult => {
+// Custom hook to manage anamnesis list
+const useAnamnesisList = (): UseAnamnesisResult => {
   const [data, setData] = useState<AnamnesisFormType[]>([]);
+  const [error, setError] = useState<string | null>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | string>('');
-
-  const debouncedSearchTerm = useDebounce(searchTerm, 600);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(API_URL);
+
       if (!response.ok) {
         throw new Error('Failed to fetch data');
       }
       const result = await response.json();
       setData(result);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError(error as Error);
+    } catch (err) {
+      setError(err as string);
     } finally {
       setIsLoading(false);
     }
@@ -39,33 +41,38 @@ const useFetchAnamnesis = (searchTerm: string): UseAnamnesisResult => {
     fetchData();
   }, [fetchData]);
 
+  // Debounce the search term to limit API calls or filtering operations
+  const debouncedSearchTerm = useDebounce(searchTerm, 600);
+
+  // Filter the data based on the debounced search term
   const filteredData = useMemo(() => {
-    return data.filter(item =>
-      item.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+
+    return data.filter(({ title, description }) =>
+      title.toLowerCase().includes(lowercasedSearchTerm) ||
+      description.toLowerCase().includes(lowercasedSearchTerm)
     );
   }, [data, debouncedSearchTerm]);
 
+  // Function to delete an item by ID
   const deleteItem = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+
       if (!response.ok) {
         throw new Error('Failed to delete item');
       }
 
       setData(prevData => prevData.filter(item => item.id !== id));
-    } catch (error) {
-      console.error('Error deleting data:', error);
-      setError(error as Error);
+    } catch (err) {
+      setError(err as string);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  return { data: filteredData, isLoading, error, deleteItem };
+  return { data: filteredData, isLoading, error, deleteItem, searchTerm, setSearchTerm };
 };
 
-export default useFetchAnamnesis;
+export default useAnamnesisList;

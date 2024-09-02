@@ -1,16 +1,16 @@
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useTable, usePagination, useSortBy, Column, SortingRule } from 'react-table';
+import { AnamnesisFormType } from 'src/types';
 
+// Custom hook for table pagination and sorting
 const useTablePagination = <T extends object>(
   columns: Column<T>[],
   data: T[],
-  pageIndex: number,
-  pageSize: number,
-  sortBy: SortingRule<T>[],
-  setSortBy: (sortBy: SortingRule<T>[]) => void,
-  setPageIndex: (index: number) => void,
-  setPageSize: (size: number) => void
 ) => {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<SortingRule<AnamnesisFormType>[]>([]);
+
   const {
     getTableProps,
     getTableBodyProps,
@@ -35,11 +35,13 @@ const useTablePagination = <T extends object>(
     usePagination
   );
 
+  // Handle page size changes
   const handlePageSizeChange = useCallback((size: number) => {
     setPageSize(size);
     setTablePageSize(size);
   }, [setPageSize, setTablePageSize]);
 
+  // Handle sort changes
   const handleSortChange = useCallback((sortBy: SortingRule<T>[]) => {
     const normalizedSortBy = sortBy.map(sort => ({
       id: sort.id,
@@ -48,12 +50,14 @@ const useTablePagination = <T extends object>(
     setSortBy(normalizedSortBy);
   }, [setSortBy]);
 
+  // Handle header click to toggle sorting
   const handleHeaderClick = useCallback((column: { id: string; isSortedDesc?: boolean; toggleSortBy: (desc?: boolean) => void; }) => {
     const isDesc = column.isSortedDesc ?? false;
     handleSortChange([{ id: column.id, desc: !isDesc }]);
     column.toggleSortBy(!isDesc);
   }, [handleSortChange]);
 
+  // Sync local state with table instance state
   useEffect(() => {
     setPageIndex(tablePageIndex);
     setPageSize(tablePageSize);
@@ -79,7 +83,9 @@ const useTablePagination = <T extends object>(
     tableNextPage,
     tablePreviousPage,
     handlePageSizeChange,
-    handleHeaderClick
+    handleHeaderClick,
+    pageIndex,
+    pageSize
   }), [
     getTableProps,
     getTableBodyProps,
@@ -93,7 +99,9 @@ const useTablePagination = <T extends object>(
     tableNextPage,
     tablePreviousPage,
     handlePageSizeChange,
-    handleHeaderClick
+    handleHeaderClick,
+    pageIndex,
+    pageSize
   ]);
 };
 

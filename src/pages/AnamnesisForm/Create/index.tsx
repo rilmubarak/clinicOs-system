@@ -1,27 +1,12 @@
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates
-} from '@dnd-kit/sortable';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { AnamnesisFormType } from 'src/types';
 import Modal from 'src/components/UI/Modal';
 import SortableItem from 'src/components/UI/SortableItem';
+import useAnamnesisForm from 'src/hooks/useAnamnesisForm';
 import FormHeader from 'src/components/AnamnesisForm/FormHeader';
 import QuestionEditor from 'src/components/AnamnesisForm/QuestionEditor';
 import QuestionTypeButtons from 'src/components/AnamnesisForm/QuestionTypeButtons';
-import { reorderItems } from 'src/utils/DnDUtils';
-import { useFormState } from 'src/hooks/useFormState';
-import { useEffect, useState } from 'react';
-import { AnamnesisFormType } from 'src/types';
-import { useNavigate } from 'react-router-dom';
 
 interface AnamnesisFormProps {
   existingFormData?: AnamnesisFormType;
@@ -34,49 +19,20 @@ const AnamnesisFormCreate = ({ existingFormData }: AnamnesisFormProps) => {
     formDescription,
     setFormDescription,
     sections,
+    error,
     setSections,
+    isSaving,
+    showModal,
+    DnDsensors,
     addSection,
     addQuestion,
+    handleDragEnd,
+    handleDeleteSection,
     updateQuestion,
     removeQuestion,
-    setIsSaving,
-    isSaving,
+    handleOnCloseModal,
     handleSave,
-    setError,
-    error
-  } = useFormState(existingFormData);
-  const navigate = useNavigate();
-
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setSections((currentItems) => reorderItems(currentItems, event));
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const handleDeleteSection = (id: string) => {
-    setSections((currentSections) => currentSections.filter(section => section.id !== id));
-  };
-
-  const closeErrorModal = () => {
-    setIsErrorModalOpen(false);
-    setError(null)
-
-    if (isSaving) {
-      setIsSaving(false);
-      navigate('/');
-    }
-  };
-
-  useEffect(() => {
-    if (error) {
-      setIsErrorModalOpen(true);
-    }
-  }, [error]);
+  } = useAnamnesisForm(existingFormData);
 
   return (
     <div className="max-w-4xl mx-auto p-3 md:p-6 bg-white shadow-md rounded-lg">
@@ -100,7 +56,7 @@ const AnamnesisFormCreate = ({ existingFormData }: AnamnesisFormProps) => {
           Add Section
         </button>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={DnDsensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sections.map(section => section.id)} strategy={verticalListSortingStrategy}>
           {sections.map((section, index) => (
             <SortableItem key={section.id} id={section.id}>
@@ -142,6 +98,7 @@ const AnamnesisFormCreate = ({ existingFormData }: AnamnesisFormProps) => {
           ))}
         </SortableContext>
       </DndContext>
+      
       {sections.length > 0 && (
         <div className="mt-6 flex justify-end">
           <button
@@ -157,19 +114,20 @@ const AnamnesisFormCreate = ({ existingFormData }: AnamnesisFormProps) => {
           </button>
         </div>
       )}
-      { isErrorModalOpen &&
+
+      { showModal.isActive && showModal.type == 'error' &&
         <Modal
           type='error'
           message={error as string}
-          onClose={closeErrorModal}
+          onClose={handleOnCloseModal}
         />
       }
 
-      { isSaving &&
+      { showModal.isActive && showModal.type == 'success' &&
         <Modal
           type='success'
           message={`Data successfully ${existingFormData? 'updated' : 'created'}!`}
-          onClose={closeErrorModal}
+          onClose={handleOnCloseModal}
         />
       }
     </div>
