@@ -18,6 +18,8 @@ const initialModal = {
   isActive: false
 }
 
+const API_URL = import.meta.env.VITE_API_URL
+
 // Custom hook for managing anamnesis form state and functionality
 const useAnamnesisForm = (existingFormData?: AnamnesisFormType) => {
   const { id } = useParams();
@@ -35,7 +37,7 @@ const useAnamnesisForm = (existingFormData?: AnamnesisFormType) => {
 
   const fetchFormData = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5001/anamnesis/${id}`);
+      const response = await fetch(`${API_URL}/anamnesis/${id}`);
       const data = await response.json();
 
       setSelectedAnamnesis(data);
@@ -85,7 +87,7 @@ const useAnamnesisForm = (existingFormData?: AnamnesisFormType) => {
     try {
       const ID = existingFormData?.id;
       const method = ID ? 'PUT' : 'POST';
-      const url = ID ? `http://localhost:5001/anamnesis/${ID}` : 'http://localhost:5001/anamnesis';
+      const url = ID ? `${API_URL}/anamnesis/${ID}` : `${API_URL}/anamnesis`;
 
       const body = JSON.stringify({
         id: ID || Date.now(),
@@ -109,7 +111,7 @@ const useAnamnesisForm = (existingFormData?: AnamnesisFormType) => {
     if (!sectionToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost:5001/anamnesis/${selectedAnamnesis.id}`, {
+      const response = await fetch(`${API_URL}/anamnesis/${selectedAnamnesis.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +140,7 @@ const useAnamnesisForm = (existingFormData?: AnamnesisFormType) => {
   // Update sections on the server
   const updateSectionsOnServer = async (updatedData: AnamnesisFormType) => {
     try {
-      const response = await fetch(`http://localhost:5001/anamnesis/${id}`, {
+      const response = await fetch(`${API_URL}/anamnesis/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ interface UseAnamnesisResult {
   deleteItem?: (val: number) => Promise<void>;
 }
 
-const API_URL = 'http://localhost:5001/anamnesis';
+const API_URL = import.meta.env.VITE_API_URL
 
 // Custom hook to manage anamnesis list
 const useAnamnesisList = (): UseAnamnesisResult => {
@@ -23,7 +23,7 @@ const useAnamnesisList = (): UseAnamnesisResult => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(`${API_URL}/anamnesis`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch data');
@@ -58,7 +58,7 @@ const useAnamnesisList = (): UseAnamnesisResult => {
   const deleteItem = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/anamnesis/${id}`, { method: 'DELETE' });
 
       if (!response.ok) {
         throw new Error('Failed to delete item');
